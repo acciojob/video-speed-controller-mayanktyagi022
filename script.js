@@ -1,21 +1,57 @@
-// Select elements
-const speed = document.querySelector('.speed');
-const bar = document.querySelector('.speed-bar');
-const video = document.querySelector('.flex');
+const player = document.querySelector('.player');
+const video = player.querySelector('.viewer');
+const toggle = player.querySelector('.toggle');
+const skipButtons = player.querySelectorAll('[data-skip]');
+const ranges = player.querySelectorAll('.player__slider');
+const progress = player.querySelector('.progress');
+const progressBar = player.querySelector('.progress__filled');
 
-// Listen for mouse movement on the speed control area
-speed.addEventListener('mousemove', function (e) {
-  // Calculate the mouse position inside the speed div
-  const y = e.pageY - this.offsetTop;
-  const percent = y / this.offsetHeight;
+// Toggle play/pause
+function togglePlay() {
+  const method = video.paused ? 'play' : 'pause';
+  video[method]();
+}
 
-  // Set playback speed range (0.4x to 4x)
-  const min = 0.4;
-  const max = 4;
-  const playbackRate = percent * (max - min) + min;
+// Update play/pause icon
+function updateButton() {
+  const icon = video.paused ? '►' : '❚ ❚';
+  toggle.textContent = icon;
+}
 
-  // Update video speed and UI
-  bar.style.height = `${Math.round(percent * 100)}%`;
-  bar.textContent = `${playbackRate.toFixed(2)}×`;
-  video.playbackRate = playbackRate;
-});
+// Handle skip buttons
+function skip() {
+  video.currentTime += parseFloat(this.dataset.skip);
+}
+
+// Handle range sliders (volume, playbackRate)
+function handleRangeUpdate() {
+  video[this.name] = this.value;
+}
+
+// Update progress bar as video plays
+function handleProgress() {
+  const percent = (video.currentTime / video.duration) * 100;
+  progressBar.style.width = `${percent}%`;
+}
+
+// Scrub through video when clicking progress bar
+function scrub(e) {
+  const scrubTime = (e.offsetX / progress.offsetWidth) * video.duration;
+  video.currentTime = scrubTime;
+}
+
+// Event listeners
+video.addEventListener('click', togglePlay);
+video.addEventListener('play', updateButton);
+video.addEventListener('pause', updateButton);
+video.addEventListener('timeupdate', handleProgress);
+
+toggle.addEventListener('click', togglePlay);
+skipButtons.forEach(button => button.addEventListener('click', skip));
+ranges.forEach(range => range.addEventListener('input', handleRangeUpdate));
+
+let mousedown = false;
+progress.addEventListener('click', scrub);
+progress.addEventListener('mousemove', e => mousedown && scrub(e));
+progress.addEventListener('mousedown', () => mousedown = true);
+progress.addEventListener('mouseup', () => mousedown = false);
